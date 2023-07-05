@@ -39,11 +39,87 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-const express = require('express');
-const bodyParser = require('body-parser');
-
+const express = require("express");
+const bodyParser = require("body-parser");
+const PORT = 3000;
 const app = express();
-
 app.use(bodyParser.json());
+
+const list = [
+  { id: 1, title: "title 1", description: "description 1" },
+  { id: 2, title: "title 2", description: "description 2" },
+];
+
+const generateNewId = (list) => {
+  let maxId = 0;
+
+  list.forEach((item) => {
+    if (item.id > maxId) {
+      maxId = item.id;
+    }
+  });
+
+  return maxId + 1;
+};
+
+app.get("/todos", (req, res) => {
+  res.send(list);
+});
+
+app.get("/todos/:id", (req, res) => {
+  const id = +req.params?.id;
+  const foundItem = list.find((x) => x.id === id);
+
+  if (!foundItem) {
+    return res.status(404).send({ error: "item not Found" });
+  }
+
+  res.send(foundItem);
+});
+
+app.post("/todos", (req, res) => {
+  const newItem = req.body;
+
+  if (!newItem.title) {
+    return res.status(404).send({ error: "title mandatory" });
+  }
+
+  list.push({ ...newItem, id: generateNewId(list) });
+  res.status(201).send(list);
+});
+
+app.put("/todos/:id", (req, res) => {
+  const id = +req.params?.id;
+  const newItem = req.body;
+  const foundIndex = list.findIndex((x) => x.id === id);
+
+  if (foundIndex === -1) {
+    return res.status(404).send({ error: "item not Found" });
+  }
+
+  const currentItem = list[foundIndex];
+  const updatedItem = { ...currentItem, ...newItem, id };
+
+  list[foundIndex] = updatedItem;
+  res.send(list);
+});
+
+app.delete("/todos/:id", (req, res) => {
+  const id = +req.params?.id;
+  const foundIndex = list.findIndex((x) => x.id === id);
+
+  if (foundIndex === -1) {
+    return res.status(404).send({ error: "item not Found" });
+  }
+
+  list.splice(foundIndex, 1);
+  res.send(list);
+});
+
+app.all("*", (req, res) => {
+  res.status(404).send("Route not found");
+});
+
+app.listen(PORT, console.log("listening on 3000"));
 
 module.exports = app;
